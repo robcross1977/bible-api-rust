@@ -1,0 +1,12 @@
+[package]
+name = "bible-api"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rocket = { version = "=0.5.0-rc.3", features = ["json"] }
+regex = "1.8.0"
+rand = "0.8.4"
+serde = { version = "1.0", features = ["derive"] }
