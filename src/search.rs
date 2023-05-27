@@ -10,14 +10,14 @@ use crate::{
 
 #[derive(Debug, PartialEq, Deserialize, Serialize)]
 pub struct BibleSearch {
-    book: String,
-    chapter: Vec<Chapter>,
+    pub title: String,
+    pub chapter: Vec<Chapter>,
 }
 
 #[derive(Debug, PartialEq, Deserialize, Serialize)]
 pub struct Chapter {
-    chapter: u8,
-    verse: Vec<u8>,
+    pub chapter: u8,
+    pub verse: Vec<u8>,
 }
 
 pub fn search(query: &str) -> Result<BibleSearch, String> {
@@ -78,7 +78,7 @@ fn chapter_to_bible_search(params: BookParams) -> Result<BibleSearch, String> {
 
     // Build the BibleSearch
     Ok(BibleSearch {
-        book: params.title,
+        title: params.title,
         chapter: vec![Chapter {
             chapter: chapter,
             verse: (1..=verses_in_chapter).collect(),
@@ -101,7 +101,7 @@ fn verse_to_bible_search(params: BookParams) -> Result<BibleSearch, String> {
 
     // Build the BibleSearch
     Ok(BibleSearch {
-        book: params.title,
+        title: params.title,
         chapter: vec![Chapter {
             chapter: chapter,
             verse: vec![verses_start],
@@ -125,7 +125,7 @@ fn verse_range_to_bible_search(params: BookParams) -> Result<BibleSearch, String
 
     // Build the BibleSearch
     Ok(BibleSearch {
-        book: params.title,
+        title: params.title,
         chapter: vec![Chapter {
             chapter: chapter,
             verse: verses_range,
@@ -211,7 +211,7 @@ mod tests {
     #[test]
     fn search_can_process_a_book_query() {
         let expected = BibleSearch {
-            book: String::from("1 John"),
+            title: String::from("1 John"),
             chapter: vec![Chapter {
                 chapter: 1,
                 verse: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
@@ -226,7 +226,7 @@ mod tests {
     #[test]
     fn search_can_process_a_chapter_query() {
         let expected = BibleSearch {
-            book: String::from("1 John"),
+            title: String::from("1 John"),
             chapter: vec![Chapter {
                 chapter: 1,
                 verse: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
@@ -240,7 +240,7 @@ mod tests {
     #[test]
     fn search_when_processing_a_failed_chapter_query_will_revert_to_book_query() {
         let expected = BibleSearch {
-            book: String::from("1 John"),
+            title: String::from("1 John"),
             chapter: vec![Chapter {
                 chapter: 1,
                 verse: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
@@ -254,7 +254,7 @@ mod tests {
     #[test]
     fn search_can_process_a_verse_query() {
         let expected = BibleSearch {
-            book: String::from("1 John"),
+            title: String::from("1 John"),
             chapter: vec![Chapter {
                 chapter: 2,
                 verse: vec![3],
@@ -268,7 +268,7 @@ mod tests {
     #[test]
     fn search_when_processing_a_failed_verse_query_due_to_bad_chapter_will_revert_to_book_query() {
         let expected = BibleSearch {
-            book: String::from("1 John"),
+            title: String::from("1 John"),
             chapter: vec![Chapter {
                 chapter: 1,
                 verse: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
@@ -282,7 +282,7 @@ mod tests {
     #[test]
     fn search_when_processing_a_failed_verse_query_due_to_bad_verse_will_revert_to_chapter_query() {
         let expected = BibleSearch {
-            book: String::from("1 John"),
+            title: String::from("1 John"),
             chapter: vec![Chapter {
                 chapter: 4,
                 verse: vec![
@@ -298,7 +298,7 @@ mod tests {
     #[test]
     fn search_can_process_a_verse_range_query() {
         let expected = BibleSearch {
-            book: String::from("1 John"),
+            title: String::from("1 John"),
             chapter: vec![Chapter {
                 chapter: 2,
                 verse: vec![3, 4, 5],
@@ -313,7 +313,7 @@ mod tests {
     fn search_when_processing_a_failed_verse_range_query_due_to_bad_chapter_will_revert_to_book_query(
     ) {
         let expected = BibleSearch {
-            book: String::from("1 John"),
+            title: String::from("1 John"),
             chapter: vec![Chapter {
                 chapter: 1,
                 verse: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
@@ -328,7 +328,7 @@ mod tests {
     fn search_when_processing_a_failed_verse_range_query_due_to_bad_verse_range_will_revert_to_chapter_query(
     ) {
         let expected = BibleSearch {
-            book: String::from("1 John"),
+            title: String::from("1 John"),
             chapter: vec![Chapter {
                 chapter: 4,
                 verse: vec![
