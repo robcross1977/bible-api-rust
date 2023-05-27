@@ -27,7 +27,7 @@ pub fn search(query: &str) -> Result<BibleSearch, String> {
     // Process the main query
     let search = match main {
         Some(main) => process_query(main),
-        None => return Err(String::from("No Search Found")),
+        None => return Err(String::from("No Results Found")),
     };
 
     // Process the sub queries
