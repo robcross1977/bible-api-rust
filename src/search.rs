@@ -1,4 +1,4 @@
-use rocket::serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::{
     chapter::chapter_exists_in_book,

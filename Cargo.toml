@@ -6,16 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rocket = { version = "=0.5.0-rc.3", features = ["json"] }
 regex = "1.8.0"
 rand = "0.8.4"
-serde = { version = "1.0", features = ["derive"] }
-
-[dependencies.sqlx]
-version = "0.6"
-default-features = false
-features = ["macros", "offline", "migrate"]
-
-[dependencies.rocket_db_pools]
-version = "=0.1.0-rc.3"
-features = ["sqlx_postgres"]
+axum = { git = "https://github.com/tokio-rs/axum.git" }
+tokio = { version = "1.28.1", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
+sqlx = { version = "0.6.3", features = ["runtime-tokio-rustls", "any", "postgres"] }
+dotenv = "0.15.0"
+serde = { version = "1.0.130", features = ["derive"] }
