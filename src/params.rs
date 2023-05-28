@@ -18,7 +18,8 @@ pub enum SearchType {
 pub struct BookParams {
     pub search_type: SearchType,
     pub title: String,
-    pub chapter: Option<u8>,
+    pub chapter_start: Option<u8>,
+    pub chapter_end: Option<u8>, // This exists in the case we want to someday support chapter ranges
     pub verse_start: Option<u8>,
     pub verse_end: Option<u8>,
 }
@@ -72,7 +73,8 @@ fn get_match_data(
         return Some(BookParams {
             search_type,
             title: title.to_owned(),
-            chapter: match_or_none(&captures, "chapter"),
+            chapter_start: match_or_none(&captures, "chapter_start"),
+            chapter_end: match_or_none(&captures, "chapter_end"),
             verse_start: match_or_none(&captures, "verse_start"),
             verse_end: match_or_none(&captures, "verse_end"),
         });
@@ -92,7 +94,8 @@ fn get_book(title: &str) -> BookParams {
     BookParams {
         search_type: SearchType::Book,
         title: title.to_owned(),
-        chapter: None,
+        chapter_start: None,
+        chapter_end: None,
         verse_start: None,
         verse_end: None,
     }
@@ -100,20 +103,19 @@ fn get_book(title: &str) -> BookParams {
 
 // Ex: Job 1
 fn get_chapter(title: &str, params: &str) -> Option<BookParams> {
-    let re: &str = r"^\s*(?<chapter>\d{1,3}).*$";
+    let re: &str = r"^\s*(?<chapter_start>\d{1,3}).*$";
     get_match_data(title, params, SearchType::Chapter, re)
 }
 
 // Ex: Job 1:2
 fn get_verse(title: &str, params: &str) -> Option<BookParams> {
-    let re: &str = r"^\s*(?<chapter>\d{1,3})\s*:\s*(?<verse_start>\d{1,3}).*$";
+    let re: &str = r"^\s*(?<chapter_start>\d{1,3})\s*:\s*(?<verse_start>\d{1,3}).*$";
     get_match_data(title, params, SearchType::Verse, re)
 }
 
 // Ex: Job 1:2-3
 fn get_verse_range(title: &str, params: &str) -> Option<BookParams> {
-    let re: &str =
-        r"^\s*(?<chapter>\d{1,3})\s*:\s*(?<verse_start>\d{1,3})\s*-\s*(?<verse_end>\d{1,3}).*$";
+    let re: &str = r"^\s*(?<chapter_start>\d{1,3})\s*:\s*(?<verse_start>\d{1,3})\s*-\s*(?<verse_end>\d{1,3}).*$";
     get_match_data(title, params, SearchType::VerseRange, re)
 }
 
@@ -141,7 +143,8 @@ mod tests {
             BookParams {
                 search_type: SearchType::Book,
                 title: String::from("3 John"),
-                chapter: None,
+                chapter_start: None,
+                chapter_end: None,
                 verse_start: None,
                 verse_end: None,
             }
@@ -155,7 +158,8 @@ mod tests {
             BookParams {
                 search_type: SearchType::Chapter,
                 title: String::from("3 John"),
-                chapter: Some(5),
+                chapter_start: Some(5),
+                chapter_end: None,
                 verse_start: None,
                 verse_end: None,
             }
@@ -169,7 +173,8 @@ mod tests {
             BookParams {
                 search_type: SearchType::Verse,
                 title: String::from("3 John"),
-                chapter: Some(125),
+                chapter_start: Some(125),
+                chapter_end: None,
                 verse_start: Some(221),
                 verse_end: None,
             }
@@ -183,7 +188,8 @@ mod tests {
             BookParams {
                 search_type: SearchType::VerseRange,
                 title: String::from("3 John"),
-                chapter: Some(125),
+                chapter_start: Some(125),
+                chapter_end: None,
                 verse_start: Some(221),
                 verse_end: Some(225),
             }

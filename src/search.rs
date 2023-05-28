@@ -56,7 +56,8 @@ fn book_to_bible_search(params: BookParams) -> Result<BibleSearch, String> {
     let updated_params = BookParams {
         search_type: SearchType::Chapter,
         title: params.title,
-        chapter: Some(1),
+        chapter_start: Some(1),
+        chapter_end: None,
         verse_start: None,
         verse_end: None,
     };
@@ -66,7 +67,7 @@ fn book_to_bible_search(params: BookParams) -> Result<BibleSearch, String> {
 
 fn chapter_to_bible_search(params: BookParams) -> Result<BibleSearch, String> {
     // Get the chapter start
-    let chapter = match unwrap_chapter(&params.title, params.chapter) {
+    let chapter = match unwrap_chapter(&params.title, params.chapter_start) {
         Ok(value) => value,
         Err(_) => return revert_to_book_search(params.title),
     };
@@ -88,7 +89,7 @@ fn chapter_to_bible_search(params: BookParams) -> Result<BibleSearch, String> {
 
 fn verse_to_bible_search(params: BookParams) -> Result<BibleSearch, String> {
     // Get the chapter start
-    let chapter = match unwrap_chapter(&params.title, params.chapter) {
+    let chapter = match unwrap_chapter(&params.title, params.chapter_start) {
         Ok(value) => value,
         Err(_) => return revert_to_book_search(params.title),
     };
@@ -111,12 +112,12 @@ fn verse_to_bible_search(params: BookParams) -> Result<BibleSearch, String> {
 
 fn verse_range_to_bible_search(params: BookParams) -> Result<BibleSearch, String> {
     // Get the chapter start
-    let chapter = match unwrap_chapter(&params.title, params.chapter) {
+    let chapter = match unwrap_chapter(&params.title, params.chapter_start) {
         Ok(value) => value,
         Err(_) => return revert_to_book_search(params.title),
     };
 
-    // Get the verse start
+    // Get the verse range
     let verses_range =
         match unwrap_verse_range(&params.title, chapter, params.verse_start, params.verse_end) {
             Ok(value) => value,
@@ -137,7 +138,8 @@ fn revert_to_book_search(title: String) -> Result<BibleSearch, String> {
     let updated_params = BookParams {
         search_type: SearchType::Book,
         title,
-        chapter: None,
+        chapter_start: None,
+        chapter_end: None,
         verse_start: None,
         verse_end: None,
     };
@@ -149,7 +151,8 @@ fn revert_to_chapter_search(title: String, chapter: u8) -> Result<BibleSearch, S
     let updated_params = BookParams {
         search_type: SearchType::Chapter,
         title,
-        chapter: Some(chapter),
+        chapter_start: Some(chapter),
+        chapter_end: None,
         verse_start: None,
         verse_end: None,
     };

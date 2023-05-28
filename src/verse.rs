@@ -1379,7 +1379,7 @@ pub fn get_verse_range_from_params(
     let start = min.clamp(1, num_verses);
     let end = max.clamp(1, num_verses);
 
-    if min > num_verses {
+    if min > num_verses || min > max {
         return None;
     }
 
@@ -1438,8 +1438,14 @@ mod tests {
     }
 
     #[test]
-    fn get_chapter_range_from_params_returns_none_if_start_is_higher_than_number() {
+    fn get_verse_range_from_params_returns_none_if_start_is_higher_than_number_of_verses_in_chapter(
+    ) {
         assert_eq!(get_verse_range_from_params("Job", 5, 39..=100), None);
+    }
+
+    #[test]
+    fn get_verse_range_from_params_returns_none_if_start_is_less_than_end() {
+        assert_eq!(get_verse_range_from_params("Job", 5, 10..=5), None);
     }
 
     #[test]
