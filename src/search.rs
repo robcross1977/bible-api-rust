@@ -30,12 +30,12 @@ pub fn search(query: &str) -> Result<BibleSearch, String> {
         None => return Err(String::from("No Results Found")),
     };
 
-    // Process the sub queries
-    let sub_queries_results = process_sub_queries(sub);
-
     // Join the results together
     match main_query_result {
         Ok(main) => {
+            // Process the sub queries
+            let sub_queries_results = process_sub_queries(&main.title, main.chapter.chapter, sub);
+
             let combined_verses = main
                 .chapter
                 .verses
@@ -75,10 +75,16 @@ fn process_query(query: &str) -> Result<BibleSearch, String> {
     }
 }
 
-fn process_sub_queries(subs: HashSet<&str>) -> HashSet<u8> {
+fn process_sub_queries(title: &str, chapter: u8, subs: HashSet<&str>) -> HashSet<u8> {
     subs.into_iter()
         .map(|sub| sub.parse::<u8>().ok())
-        .filter(|s| s.is_some())
+        .filter(|s| {
+            if s.is_some() {
+                return verse_exists_in_chapter(title, chapter, s.unwrap());
+            }
+
+            return false;
+        })
         .map(|s| s.unwrap())
         .collect()
 }
@@ -369,6 +375,62 @@ mod tests {
         };
 
         let result = search("1 John 4:98-99").unwrap();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn search_when_doing_sub_queries_on_verse_query_adds_verses_that_are_not_there() {
+        let expected = BibleSearch {
+            title: String::from("1 John"),
+            chapter: Chapter {
+                chapter: 1,
+                verses: HashSet::from([2, 3, 5, 7, 9]),
+            },
+        };
+
+        let result = search("1 John 1:2, 3, 5, 7, 9").unwrap();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn search_when_doing_sub_queries_on_verse_query_will_not_add_non_existant_verses() {
+        let expected = BibleSearch {
+            title: String::from("1 John"),
+            chapter: Chapter {
+                chapter: 1,
+                verses: HashSet::from([2, 3, 5, 7, 9]),
+            },
+        };
+
+        let result = search("1 John 1:2, 3, 5, 7, 9, 11, 13, 15").unwrap();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn search_when_doing_sub_queries_on_verse_range_query_adds_verses_that_are_not_there() {
+        let expected = BibleSearch {
+            title: String::from("1 John"),
+            chapter: Chapter {
+                chapter: 1,
+                verses: HashSet::from([2, 3, 5, 7, 9]),
+            },
+        };
+
+        let result = search("1 John 1:2-3, 5, 7, 9").unwrap();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn search_when_doing_sub_queries_on_verse_range_query_will_not_add_non_existant_verses() {
+        let expected = BibleSearch {
+            title: String::from("1 John"),
+            chapter: Chapter {
+                chapter: 1,
+                verses: HashSet::from([2, 3, 5, 7, 9]),
+            },
+        };
+
+        let result = search("1 John 1:2-3, 5, 7, 9, 11, 13, 15").unwrap();
         assert_eq!(result, expected);
     }
 }
