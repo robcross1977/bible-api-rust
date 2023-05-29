@@ -44,7 +44,7 @@ pub fn get_params(query: &str) -> Option<String> {
     // Strip the title from the query to get the remaining params
     let params = query.replace(captures.as_str(), "");
 
-    if params.len() > 0 {
+    if !params.is_empty() {
         Some(params)
     } else {
         None
@@ -322,13 +322,13 @@ fn get_proper_title(title: &str) -> Option<String> {
 
     // Iterate over the book_matcher and return the proper title if a match is found
     for (key, value) in book_matcher.into_iter() {
-        if Regex::new(value.as_str()).unwrap().is_match(&title) {
+        if Regex::new(value.as_str()).unwrap().is_match(title) {
             return Some(key.to_owned());
         }
     }
 
     // Return None if no match is found
-    return None;
+    None
 }
 
 /// The get_regex function exists to make the regex pattern more readable.
@@ -345,11 +345,8 @@ fn get_book_regex() -> regex::Regex {
     // of spaces is allowed between the number and the string
     let book_title = format!(r"\s*{}?\s*{}\s*", book_num, BOOK_TEXT);
 
-    // Create the regex matcher string
-    let matcher = Regex::new(&book_title).unwrap();
-
-    // Return the matcher
-    matcher
+    // Create the regex matcher string and retun
+    Regex::new(&book_title).unwrap()
 }
 
 fn get_title_from_captures(captures: Captures) -> Option<String> {
@@ -364,11 +361,8 @@ fn get_title_from_captures(captures: Captures) -> Option<String> {
     // Get the book_text from the captures
     let book_text = captures.name("book_text")?.as_str();
 
-    // Format the book_num and book_text into a single string
-    let formatted_book_title = format_title(book_num, book_text);
-
-    // Return the formatted title
-    formatted_book_title
+    // Format the book_num and book_text into a single string and return
+    format_title(book_num, book_text)
 }
 
 fn get_book_num_string(book_num: &str) -> &str {
@@ -442,16 +436,16 @@ mod tests {
             .iter()
             .map(|s| format!("  {}  {}  ", s, book_title))
             .collect();
-        let all_variants = [
+
+        // return all the variants
+        [
             no_spaces,
             center_spaces,
             leading_spaces,
             trailing_spaces,
             all_spaces,
         ]
-        .concat();
-
-        all_variants
+        .concat()
     }
 
     // Our test cases are all lowercase, but the function under test

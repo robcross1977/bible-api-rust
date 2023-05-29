@@ -127,7 +127,7 @@ pub fn get_sub_queries(query: &str) -> (Option<&str>, HashSet<&str>) {
         Some(s) => Some(s),
         None => None,
     };
-    let tail = HashSet::from_iter(v[1..].to_vec().into_iter());
+    let tail = HashSet::from_iter(v[1..].iter().copied());
 
     (head, tail)
 }

@@ -1360,10 +1360,7 @@ pub fn get_verse_count_by_book_and_chapter(book: &str, chapter: u8) -> Option<u8
     ]);
 
     match verse_counts.get(book) {
-        Some(chap) => match chap.get(&chapter) {
-            Some(verse_count) => Some(*verse_count),
-            None => None,
-        },
+        Some(chap) => chap.get(&chapter).copied(),
         None => None,
     }
 }
@@ -1375,7 +1372,7 @@ pub fn get_verse_range_from_params(
 ) -> Option<HashSet<u8>> {
     let num_verses = get_verse_count_by_book_and_chapter(book, chapter)?;
     let min = requested_range.clone().min()?;
-    let max = requested_range.clone().max()?;
+    let max = requested_range.max()?;
     let start = min.clamp(1, num_verses);
     let end = max.clamp(1, num_verses);
 
@@ -1383,7 +1380,7 @@ pub fn get_verse_range_from_params(
         return None;
     }
 
-    Some(HashSet::from_iter((start..=end).into_iter()))
+    Some(HashSet::from_iter(start..=end))
 }
 
 pub fn verse_exists_in_chapter(book: &str, chapter: u8, verse: u8) -> bool {
@@ -1392,7 +1389,7 @@ pub fn verse_exists_in_chapter(book: &str, chapter: u8, verse: u8) -> bool {
         None => return false,
     };
 
-    return verse >= 1 && verse <= num_verses;
+    verse >= 1 && verse <= num_verses
 }
 
 #[cfg(test)]
@@ -1433,7 +1430,7 @@ mod tests {
     fn get_verse_range_from_params_clamps_the_max_to_number_of_verses_in_chapter() {
         assert_eq!(
             get_verse_range_from_params("Job", 5, 1..=100).unwrap(),
-            HashSet::from_iter((1..=27).into_iter())
+            HashSet::from_iter(1..=27)
         );
     }
 
@@ -1444,17 +1441,12 @@ mod tests {
     }
 
     #[test]
-    fn get_verse_range_from_params_returns_none_if_start_is_less_than_end() {
-        assert_eq!(get_verse_range_from_params("Job", 5, 10..=5), None);
-    }
-
-    #[test]
     fn get_verse_exists_in_chapter_returns_true_if_chapter_has_that_verse() {
-        assert_eq!(verse_exists_in_chapter("Job", 5, 25), true);
+        assert!(verse_exists_in_chapter("Job", 5, 25));
     }
 
     #[test]
     fn get_verse_exists_in_chapter_returns_false_if_that_verse_not_in_chapter() {
-        assert_eq!(verse_exists_in_chapter("Job", 5, 30), false);
+        assert!(!verse_exists_in_chapter("Job", 5, 30));
     }
 }

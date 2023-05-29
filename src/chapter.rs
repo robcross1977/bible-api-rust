@@ -72,10 +72,7 @@ pub fn get_chapter_count_by_book(book: &str) -> Option<u8> {
         ("Zephaniah", 3),
     ]);
 
-    match chapter_counts.get(book) {
-        Some(count) => Some(*count),
-        None => None,
-    }
+    chapter_counts.get(book).copied()
 }
 
 /// The chapter_exists_in_book function takes a book name and a chapter number
@@ -86,7 +83,7 @@ pub fn chapter_exists_in_book(book: &str, chapter: u8) -> bool {
         None => return false,
     };
 
-    return chapter >= 1 && chapter <= num_chapters;
+    chapter >= 1 && chapter <= num_chapters
 }
 
 #[cfg(test)]
@@ -105,11 +102,11 @@ mod tests {
 
     #[test]
     fn get_chapter_exists_in_book_returns_true_if_book_has_that_chapter() {
-        assert_eq!(chapter_exists_in_book("Job", 3), true);
+        assert!(chapter_exists_in_book("Job", 3));
     }
 
     #[test]
     fn get_chapter_exists_in_book_returns_false_if_that_chapter_not_in_book() {
-        assert_eq!(chapter_exists_in_book("Job", 100), false);
+        assert!(!chapter_exists_in_book("Job", 100));
     }
 }

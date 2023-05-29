@@ -45,7 +45,7 @@ pub async fn search(
     )
     .fetch_all(&pool)
     .await
-    .map(|results| Json(results))
+    .map(Json)
     .map_err(internal_error)
 }
 

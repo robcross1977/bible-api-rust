@@ -66,12 +66,12 @@ fn process_query(query: &str) -> Result<BibleSearch, String> {
     // Turn the typed parameters into a BibleSearch using the handlers
     match book_search_params {
         Some(params) => match params.search_type {
-            SearchType::Book => return book_to_bible_search(params),
-            SearchType::Chapter => return chapter_to_bible_search(params),
-            SearchType::Verse => return verse_to_bible_search(params),
-            SearchType::VerseRange => return verse_range_to_bible_search(params),
+            SearchType::Book => book_to_bible_search(params),
+            SearchType::Chapter => chapter_to_bible_search(params),
+            SearchType::Verse => verse_to_bible_search(params),
+            SearchType::VerseRange => verse_range_to_bible_search(params),
         },
-        None => return Err(String::from("No Matching Search Format Found")),
+        None => Err(String::from("No Matching Search Format Found")),
     }
 }
 
@@ -83,7 +83,7 @@ fn process_sub_queries(title: &str, chapter: u8, subs: HashSet<&str>) -> HashSet
                 return verse_exists_in_chapter(title, chapter, s.unwrap());
             }
 
-            return false;
+            false
         })
         .map(|s| s.unwrap())
         .collect()
@@ -98,7 +98,7 @@ fn book_to_bible_search(params: BookParams) -> Result<BibleSearch, String> {
         verse_end: None,
     };
 
-    return chapter_to_bible_search(updated_params);
+    chapter_to_bible_search(updated_params)
 }
 
 fn chapter_to_bible_search(params: BookParams) -> Result<BibleSearch, String> {
@@ -118,7 +118,7 @@ fn chapter_to_bible_search(params: BookParams) -> Result<BibleSearch, String> {
         title: params.title,
         chapter: Chapter {
             chapter,
-            verses: HashSet::from_iter((1..=verses_in_chapter).into_iter()),
+            verses: HashSet::from_iter(1..=verses_in_chapter),
         },
     })
 }
@@ -179,7 +179,7 @@ fn revert_to_book_search(title: String) -> Result<BibleSearch, String> {
         verse_end: None,
     };
 
-    return book_to_bible_search(updated_params);
+    book_to_bible_search(updated_params)
 }
 
 fn revert_to_chapter_search(title: String, chapter: u8) -> Result<BibleSearch, String> {
@@ -191,7 +191,7 @@ fn revert_to_chapter_search(title: String, chapter: u8) -> Result<BibleSearch, S
         verse_end: None,
     };
 
-    return chapter_to_bible_search(updated_params);
+    chapter_to_bible_search(updated_params)
 }
 
 fn unwrap_chapter(book: &str, chapter: Option<u8>) -> Result<u8, String> {
@@ -204,7 +204,7 @@ fn unwrap_chapter(book: &str, chapter: Option<u8>) -> Result<u8, String> {
             }
         }
 
-        None => return Err(String::from("No Chapter Start Found")),
+        None => Err(String::from("No Chapter Start Found")),
     }
 }
 
@@ -218,7 +218,7 @@ fn unwrap_verse(book: &str, chapter: u8, verse: Option<u8>) -> Result<u8, String
             }
         }
 
-        None => return Err(String::from("No Verse Start Found For Verse Search")),
+        None => Err(String::from("No Verse Start Found For Verse Search")),
     }
 }
 
