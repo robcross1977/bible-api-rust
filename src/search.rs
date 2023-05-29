@@ -1,5 +1,3 @@
-use serde::{Deserialize, Serialize};
-
 use crate::{
     chapter::chapter_exists_in_book,
     params::{get_search_params, get_sub_queries, BookParams, SearchType},
@@ -7,33 +5,58 @@ use crate::{
         get_verse_count_by_book_and_chapter, get_verse_range_from_params, verse_exists_in_chapter,
     },
 };
+use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 
 #[derive(Debug, PartialEq, Deserialize, Serialize)]
 pub struct BibleSearch {
     pub title: String,
-    pub chapter: Vec<Chapter>,
+    pub chapter: Chapter,
 }
 
 #[derive(Debug, PartialEq, Deserialize, Serialize)]
 pub struct Chapter {
     pub chapter: u8,
-    pub verse: Vec<u8>,
+    pub verses: HashSet<u8>,
 }
 
 pub fn search(query: &str) -> Result<BibleSearch, String> {
     // Get the main query and the sub queries for the search
-    let (main, _sub) = get_sub_queries(query);
+    let (main, sub) = get_sub_queries(query);
 
     // Process the main query
-    let search = match main {
+    let main_query_result = match main {
         Some(main) => process_query(main),
         None => return Err(String::from("No Results Found")),
     };
 
     // Process the sub queries
+    let sub_queries_results = process_sub_queries(sub);
 
-    // Return the results
-    search
+    // Join the results together
+    match main_query_result {
+        Ok(main) => {
+            let combined_verses = main
+                .chapter
+                .verses
+                .union(&sub_queries_results)
+                .cloned()
+                .collect();
+
+            let combined_chapter = Chapter {
+                chapter: main.chapter.chapter,
+                verses: combined_verses,
+            };
+
+            let combined_search = BibleSearch {
+                title: main.title,
+                chapter: combined_chapter,
+            };
+
+            Ok(combined_search)
+        }
+        Err(e) => Err(e),
+    }
 }
 
 fn process_query(query: &str) -> Result<BibleSearch, String> {
@@ -52,12 +75,19 @@ fn process_query(query: &str) -> Result<BibleSearch, String> {
     }
 }
 
+fn process_sub_queries(subs: HashSet<&str>) -> HashSet<u8> {
+    subs.into_iter()
+        .map(|sub| sub.parse::<u8>().ok())
+        .filter(|s| s.is_some())
+        .map(|s| s.unwrap())
+        .collect()
+}
+
 fn book_to_bible_search(params: BookParams) -> Result<BibleSearch, String> {
     let updated_params = BookParams {
         search_type: SearchType::Chapter,
         title: params.title,
-        chapter_start: Some(1),
-        chapter_end: None,
+        chapter: Some(1),
         verse_start: None,
         verse_end: None,
     };
@@ -67,7 +97,7 @@ fn book_to_bible_search(params: BookParams) -> Result<BibleSearch, String> {
 
 fn chapter_to_bible_search(params: BookParams) -> Result<BibleSearch, String> {
     // Get the chapter start
-    let chapter = match unwrap_chapter(&params.title, params.chapter_start) {
+    let chapter = match unwrap_chapter(&params.title, params.chapter) {
         Ok(value) => value,
         Err(_) => return revert_to_book_search(params.title),
     };
@@ -80,16 +110,16 @@ fn chapter_to_bible_search(params: BookParams) -> Result<BibleSearch, String> {
     // Build the BibleSearch
     Ok(BibleSearch {
         title: params.title,
-        chapter: vec![Chapter {
-            chapter: chapter,
-            verse: (1..=verses_in_chapter).collect(),
-        }],
+        chapter: Chapter {
+            chapter,
+            verses: HashSet::from_iter((1..=verses_in_chapter).into_iter()),
+        },
     })
 }
 
 fn verse_to_bible_search(params: BookParams) -> Result<BibleSearch, String> {
     // Get the chapter start
-    let chapter = match unwrap_chapter(&params.title, params.chapter_start) {
+    let chapter = match unwrap_chapter(&params.title, params.chapter) {
         Ok(value) => value,
         Err(_) => return revert_to_book_search(params.title),
     };
@@ -103,16 +133,16 @@ fn verse_to_bible_search(params: BookParams) -> Result<BibleSearch, String> {
     // Build the BibleSearch
     Ok(BibleSearch {
         title: params.title,
-        chapter: vec![Chapter {
-            chapter: chapter,
-            verse: vec![verses_start],
-        }],
+        chapter: Chapter {
+            chapter,
+            verses: HashSet::from([verses_start]),
+        },
     })
 }
 
 fn verse_range_to_bible_search(params: BookParams) -> Result<BibleSearch, String> {
     // Get the chapter start
-    let chapter = match unwrap_chapter(&params.title, params.chapter_start) {
+    let chapter = match unwrap_chapter(&params.title, params.chapter) {
         Ok(value) => value,
         Err(_) => return revert_to_book_search(params.title),
     };
@@ -127,10 +157,10 @@ fn verse_range_to_bible_search(params: BookParams) -> Result<BibleSearch, String
     // Build the BibleSearch
     Ok(BibleSearch {
         title: params.title,
-        chapter: vec![Chapter {
-            chapter: chapter,
-            verse: verses_range,
-        }],
+        chapter: Chapter {
+            chapter,
+            verses: verses_range,
+        },
     })
 }
 
@@ -138,8 +168,7 @@ fn revert_to_book_search(title: String) -> Result<BibleSearch, String> {
     let updated_params = BookParams {
         search_type: SearchType::Book,
         title,
-        chapter_start: None,
-        chapter_end: None,
+        chapter: None,
         verse_start: None,
         verse_end: None,
     };
@@ -151,8 +180,7 @@ fn revert_to_chapter_search(title: String, chapter: u8) -> Result<BibleSearch, S
     let updated_params = BookParams {
         search_type: SearchType::Chapter,
         title,
-        chapter_start: Some(chapter),
-        chapter_end: None,
+        chapter: Some(chapter),
         verse_start: None,
         verse_end: None,
     };
@@ -193,7 +221,7 @@ fn unwrap_verse_range(
     chapter: u8,
     verse_start: Option<u8>,
     verse_end: Option<u8>,
-) -> Result<Vec<u8>, String> {
+) -> Result<HashSet<u8>, String> {
     // The start should be checked before it gets here, so panic if it is a none
     let start = verse_start.unwrap();
 
@@ -215,10 +243,10 @@ mod tests {
     fn search_can_process_a_book_query() {
         let expected = BibleSearch {
             title: String::from("1 John"),
-            chapter: vec![Chapter {
+            chapter: Chapter {
                 chapter: 1,
-                verse: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-            }],
+                verses: HashSet::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
+            },
         };
 
         let result = search("1 John").unwrap();
@@ -230,10 +258,10 @@ mod tests {
     fn search_can_process_a_chapter_query() {
         let expected = BibleSearch {
             title: String::from("1 John"),
-            chapter: vec![Chapter {
+            chapter: Chapter {
                 chapter: 1,
-                verse: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-            }],
+                verses: HashSet::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
+            },
         };
 
         let result = search("1 John 1").unwrap();
@@ -244,10 +272,10 @@ mod tests {
     fn search_when_processing_a_failed_chapter_query_will_revert_to_book_query() {
         let expected = BibleSearch {
             title: String::from("1 John"),
-            chapter: vec![Chapter {
+            chapter: Chapter {
                 chapter: 1,
-                verse: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-            }],
+                verses: HashSet::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
+            },
         };
 
         let result = search("1 John").unwrap();
@@ -258,10 +286,10 @@ mod tests {
     fn search_can_process_a_verse_query() {
         let expected = BibleSearch {
             title: String::from("1 John"),
-            chapter: vec![Chapter {
+            chapter: Chapter {
                 chapter: 2,
-                verse: vec![3],
-            }],
+                verses: HashSet::from([3]),
+            },
         };
 
         let result = search("1 John 2:3").unwrap();
@@ -272,10 +300,10 @@ mod tests {
     fn search_when_processing_a_failed_verse_query_due_to_bad_chapter_will_revert_to_book_query() {
         let expected = BibleSearch {
             title: String::from("1 John"),
-            chapter: vec![Chapter {
+            chapter: Chapter {
                 chapter: 1,
-                verse: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-            }],
+                verses: HashSet::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
+            },
         };
 
         let result = search("1 John 223:3").unwrap();
@@ -286,12 +314,12 @@ mod tests {
     fn search_when_processing_a_failed_verse_query_due_to_bad_verse_will_revert_to_chapter_query() {
         let expected = BibleSearch {
             title: String::from("1 John"),
-            chapter: vec![Chapter {
+            chapter: Chapter {
                 chapter: 4,
-                verse: vec![
+                verses: HashSet::from([
                     1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-                ],
-            }],
+                ]),
+            },
         };
 
         let result = search("1 John 4:345").unwrap();
@@ -302,10 +330,10 @@ mod tests {
     fn search_can_process_a_verse_range_query() {
         let expected = BibleSearch {
             title: String::from("1 John"),
-            chapter: vec![Chapter {
+            chapter: Chapter {
                 chapter: 2,
-                verse: vec![3, 4, 5],
-            }],
+                verses: HashSet::from([3, 4, 5]),
+            },
         };
 
         let result = search("1 John 2:3-5").unwrap();
@@ -317,10 +345,10 @@ mod tests {
     ) {
         let expected = BibleSearch {
             title: String::from("1 John"),
-            chapter: vec![Chapter {
+            chapter: Chapter {
                 chapter: 1,
-                verse: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-            }],
+                verses: HashSet::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
+            },
         };
 
         let result = search("1 John 223:3-4").unwrap();
@@ -332,12 +360,12 @@ mod tests {
     ) {
         let expected = BibleSearch {
             title: String::from("1 John"),
-            chapter: vec![Chapter {
+            chapter: Chapter {
                 chapter: 4,
-                verse: vec![
+                verses: HashSet::from([
                     1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-                ],
-            }],
+                ]),
+            },
         };
 
         let result = search("1 John 4:98-99").unwrap();

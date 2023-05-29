@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::ops::RangeInclusive;
 
 pub fn get_verse_count_by_book_and_chapter(book: &str, chapter: u8) -> Option<u8> {
@@ -1372,7 +1372,7 @@ pub fn get_verse_range_from_params(
     book: &str,
     chapter: u8,
     requested_range: RangeInclusive<u8>,
-) -> Option<Vec<u8>> {
+) -> Option<HashSet<u8>> {
     let num_verses = get_verse_count_by_book_and_chapter(book, chapter)?;
     let min = requested_range.clone().min()?;
     let max = requested_range.clone().max()?;
@@ -1383,7 +1383,7 @@ pub fn get_verse_range_from_params(
         return None;
     }
 
-    Some((start..=end).collect())
+    Some(HashSet::from_iter((start..=end).into_iter()))
 }
 
 pub fn verse_exists_in_chapter(book: &str, chapter: u8, verse: u8) -> bool {
@@ -1425,7 +1425,7 @@ mod tests {
     fn get_verse_range_from_params_clamps_the_min_to_1() {
         assert_eq!(
             get_verse_range_from_params("Job", 5, 0..=5).unwrap(),
-            [1, 2, 3, 4, 5]
+            HashSet::from([1, 2, 3, 4, 5])
         );
     }
 
@@ -1433,7 +1433,7 @@ mod tests {
     fn get_verse_range_from_params_clamps_the_max_to_number_of_verses_in_chapter() {
         assert_eq!(
             get_verse_range_from_params("Job", 5, 1..=100).unwrap(),
-            (1..=27).collect::<Vec<u8>>()
+            HashSet::from_iter((1..=27).into_iter())
         );
     }
 
