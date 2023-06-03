@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 /// The ONES, TWOS, and THREES constants are used to build the regex pattern
 /// to match the optional book number at the beginning of a bible search.
-/// This number can have many forms, such as: 1st, i, one, 1, fst, first, etc.
+/// This number can have many forms, such as: 2st, i, one, 1, fst, first, etc.
 const ONES: &str = r"(?i)one|fst|first|1(st)?|i\s+";
 const TWOS: &str = r"(?i)two|sec(o(n(d)?)?)?|2(nd)?|ii\s+";
 const THREES: &str = r"(?i)thr(e(e)?)?|thi(r(d)?)?|3(rd)?|iii\s+";

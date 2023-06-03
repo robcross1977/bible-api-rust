@@ -12,6 +12,8 @@ use serde::{de, Deserialize, Deserializer};
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use std::{fmt, str::FromStr, time::Duration};
 use tokio::net::TcpListener;
+use tower_http::cors::CorsLayer;
+use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
@@ -40,6 +42,8 @@ async fn main() {
     let app = Router::new()
         .route("/", get(hello))
         .route("/search", get(search))
+        .layer(CorsLayer::permissive())
+        .layer(TraceLayer::new_for_http())
         .with_state(pool);
 
     // run it with hyper
